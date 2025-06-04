@@ -1,4 +1,4 @@
-import { createContext, useCallback, useState, ReactNode } from 'react';
+import { createContext, useCallback, useState, ReactNode, useEffect } from 'react';
 import { useSupabase } from './SupabaseContext';
 import { User } from '../types';
 
@@ -19,6 +19,51 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
+  const fetchUserData = useCallback(async (userId: string) => {
+    try {
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
+      
+      if (userError) {
+        // If user doesn't exist in our users table, create them
+        if (userError.code === 'PGRST116') {
+          const { data: { user: authUser } } = await supabase.auth.getUser();
+          if (authUser) {
+            const newUser = {
+              id: authUser.id,
+              email: authUser.email!,
+              name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || 'User',
+              avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture,
+              role: 'user' as const,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            };
+
+            const { data: createdUser, error: createError } = await supabase
+              .from('users')
+              .insert(newUser)
+              .select()
+              .single();
+
+            if (createError) {
+              throw createError;
+            }
+            return createdUser;
+          }
+        }
+        throw userError;
+      }
+      
+      return userData;
+    } catch (err) {
+      console.error('Error fetching user data:', err);
+      throw err;
+    }
+  }, [supabase]);
+
   const checkAuth = useCallback(async () => {
     try {
       setIsLoading(true);
@@ -27,26 +72,49 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
-        // Get user data from our users table
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('*')
-          .eq('id', session.user.id)
-          .single();
-        
-        if (userError) {
-          throw userError;
-        }
-        
+        const userData = await fetchUserData(session.user.id);
         setUser(userData as User);
+      } else {
+        setUser(null);
       }
     } catch (err) {
       console.error('Error checking auth:', err);
       setError('Failed to authenticate user');
+      setUser(null);
     } finally {
       setIsLoading(false);
     }
-  }, [supabase]);
+  }, [supabase, fetchUserData]);
+
+  // Set up auth state listener
+  useEffect(() => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      async (event, session) => {
+        console.log('Auth state changed:', event, session);
+        
+        if (event === 'SIGNED_IN' && session) {
+          try {
+            const userData = await fetchUserData(session.user.id);
+            setUser(userData as User);
+          } catch (err) {
+            console.error('Error handling sign in:', err);
+            setError('Failed to load user data');
+          }
+        } else if (event === 'SIGNED_OUT') {
+          setUser(null);
+        }
+        
+        setIsLoading(false);
+      }
+    );
+
+    // Initial auth check
+    checkAuth();
+
+    return () => {
+      subscription.unsubscribe();
+    };
+  }, [supabase, checkAuth, fetchUserData]);
 
   const signInWithGoogle = async () => {
     try {
@@ -57,7 +125,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}`,
-          scopes: 'email profile',
         }
       });
       
@@ -71,7 +138,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     } catch (err: any) {
       console.error('Error signing in with Google:', err);
       setError(err.message || 'Failed to sign in with Google');
-    } finally {
       setIsLoading(false);
     }
   };
