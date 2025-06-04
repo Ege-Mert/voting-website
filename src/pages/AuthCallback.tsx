@@ -26,11 +26,17 @@ const AuthCallback = () => {
 
         if (session) {
           // Get user data to determine role
-          const { data: userData } = await supabase
+          const { data: userData, error: userError } = await supabase
             .from('users')
             .select('role')
             .eq('id', session.user.id)
             .single();
+
+          if (userError) {
+            console.error('Error fetching user data:', userError);
+            navigate('/');
+            return;
+          }
 
           // Clean up URL parameters
           window.history.replaceState({}, document.title, window.location.pathname);
