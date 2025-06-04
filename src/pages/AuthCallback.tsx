@@ -10,26 +10,15 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        // Get the code from the URL
-        const code = new URLSearchParams(window.location.search).get('code');
-        
-        if (!code) {
-          console.error('No code provided in callback URL');
-          navigate('/login');
-          return;
-        }
+        // Supabase automatically exchanges the code from the URL when
+        // `detectSessionInUrl` is enabled. Retrieve the current session.
+        const {
+          data: { session },
+          error
+        } = await supabase.auth.getSession();
 
-        // Exchange the code for a session
-        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-        
-        if (error) {
-          console.error('Error exchanging code for session:', error);
-          navigate('/login');
-          return;
-        }
-
-        if (!data.session) {
-          console.error('No session returned from exchange');
+        if (error || !session) {
+          console.error('No active session:', error);
           navigate('/login');
           return;
         }
@@ -38,7 +27,7 @@ const AuthCallback = () => {
         const { data: userData, error: userError } = await supabase
           .from('users')
           .select('role')
-          .eq('id', data.session.user.id)
+          .eq('id', session.user.id)
           .single();
 
         if (userError) {
