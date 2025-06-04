@@ -88,10 +88,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session);
+        
         if (event === 'SIGNED_IN' && session) {
           try {
             const userData = await fetchUserData(session.user.id);
             setUser(userData as User);
+            
+            // Clear the URL hash/query params after successful auth
+            if (window.location.hash || window.location.search) {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
           } catch (err) {
             console.error('Error handling sign in:', err);
             setError('Failed to load user data');
@@ -120,11 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
-          },
-          redirectTo: `${window.location.origin}/login`
+          redirectTo: `${window.location.origin}` // Redirect to root, not /login
         }
       });
       
