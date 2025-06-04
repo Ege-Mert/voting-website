@@ -5,7 +5,6 @@ import {
   Award as AwardIcon
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useAuth } from '../../hooks/useAuth';
 import { getEventById, getEventResults } from '../../services/eventService';
 import { Event, CategoryWithResults, ItemResult } from '../../types';
 import { format } from 'date-fns';
@@ -39,9 +38,9 @@ const ResultsPage = () => {
         if (resultsData.length > 0) {
           setActiveCategory(resultsData[0].id);
         }
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error fetching results:', err);
-        setError(err.message || 'Failed to load results');
+        setError(err instanceof Error ? err.message : 'Failed to load results');
       } finally {
         setIsLoading(false);
       }

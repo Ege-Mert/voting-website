@@ -1,15 +1,14 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link } from 'react-router-dom';
 import { Plus, Edit, Trash, Eye, Calendar, AlertTriangle } from 'lucide-react';
 import { motion } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { getAdminEvents, deleteEvent, updateEventStatus } from '../../services/eventService';
 import { Event } from '../../types';
-import { format, isPast, isFuture } from 'date-fns';
+import { format, isPast } from 'date-fns';
 
 const AdminDashboard = () => {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const [events, setEvents] = useState<Event[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -23,9 +22,9 @@ const AdminDashboard = () => {
         setIsLoading(true);
         const events = await getAdminEvents(user.id);
         setEvents(events);
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error fetching events:', err);
-        setError(err.message || 'Failed to load events');
+        setError(err instanceof Error ? err.message : 'Failed to load events');
       } finally {
         setIsLoading(false);
       }
@@ -39,9 +38,9 @@ const AdminDashboard = () => {
       await deleteEvent(eventId);
       setEvents(events.filter(event => event.id !== eventId));
       setShowDeleteConfirm(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error deleting event:', err);
-      setError(err.message || 'Failed to delete event');
+      setError(err instanceof Error ? err.message : 'Failed to delete event');
     }
   };
   
@@ -51,9 +50,9 @@ const AdminDashboard = () => {
       setEvents(events.map(event => 
         event.id === updatedEvent.id ? updatedEvent : event
       ));
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error updating event status:', err);
-      setError(err.message || 'Failed to update event status');
+      setError(err instanceof Error ? err.message : 'Failed to update event status');
     }
   };
   

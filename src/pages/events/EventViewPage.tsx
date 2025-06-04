@@ -24,9 +24,9 @@ const EventViewPage = () => {
         setIsLoading(true);
         const eventData = await getEventById(eventId);
         setEvent(eventData);
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error fetching event:', err);
-        setError(err.message || 'Failed to load event');
+        setError(err instanceof Error ? err.message : 'Failed to load event');
       } finally {
         setIsLoading(false);
       }

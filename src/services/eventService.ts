@@ -1,5 +1,5 @@
 import { supabase } from '../lib/supabase';
-import { Event, Category, Item, ItemResult, CategoryWithResults } from '../types';
+import { Event, Category, Item, CategoryWithResults } from '../types';
 import short from 'short-uuid';
 
 export const getEventById = async (eventId: string) => {
