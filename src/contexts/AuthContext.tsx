@@ -90,7 +90,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           try {
             const userData = await fetchUserData(session.user.id);
             setUser(userData as User);
-            window.location.href = '/'; // Redirect to home after successful sign in
           } catch (err) {
             console.error('Error handling sign in:', err);
             setError('Failed to load user data');
@@ -119,6 +118,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
+          redirectTo: window.location.origin,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
@@ -128,10 +128,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       if (error) {
         throw error;
-      }
-
-      if (data?.url) {
-        window.location.href = data.url;
       }
     } catch (err: any) {
       console.error('Error signing in with Google:', err);
