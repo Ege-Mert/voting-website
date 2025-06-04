@@ -86,6 +86,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
+        console.log('Auth state changed:', event, session); // Debug log
         if (event === 'SIGNED_IN' && session) {
           try {
             const userData = await fetchUserData(session.user.id);
@@ -118,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: `${window.location.origin}`,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent'
@@ -129,6 +130,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         throw error;
       }
+
+      console.log('Sign in response:', data); // Debug log
     } catch (err: any) {
       console.error('Error signing in with Google:', err);
       setError(err.message || 'Failed to sign in with Google');
