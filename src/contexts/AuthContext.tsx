@@ -36,7 +36,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               id: authUser.id,
               email: authUser.email!,
               name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || 'User',
-              role: 'voter' as const, // Default role for new users
+              role: 'voter' as const,
               created_at: new Date().toISOString()
             };
 
@@ -66,7 +66,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       setIsLoading(true);
       
-      // Check if user is already authenticated
       const { data: { session } } = await supabase.auth.getSession();
       
       if (session) {
@@ -84,21 +83,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   }, [supabase, fetchUserData]);
 
-  // Set up auth state listener
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
-        
         if (event === 'SIGNED_IN' && session) {
           try {
             const userData = await fetchUserData(session.user.id);
             setUser(userData as User);
-            
-            // Clear the URL hash/query params after successful auth
-            if (window.location.hash || window.location.search) {
-              window.history.replaceState({}, document.title, window.location.pathname);
-            }
+            window.location.href = '/'; // Redirect to home after successful sign in
           } catch (err) {
             console.error('Error handling sign in:', err);
             setError('Failed to load user data');
@@ -127,7 +119,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}` // Redirect to root, not /login
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       });
       
@@ -135,13 +130,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
 
-      // Only redirect if we have a URL
       if (data?.url) {
         window.location.href = data.url;
       }
     } catch (err: any) {
       console.error('Error signing in with Google:', err);
       setError(err.message || 'Failed to sign in with Google');
+    } finally {
       setIsLoading(false);
     }
   };
