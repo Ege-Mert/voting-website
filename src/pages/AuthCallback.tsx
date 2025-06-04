@@ -28,6 +28,7 @@ const AuthCallback = () => {
         return;
       }
 
+
       window.history.replaceState({}, document.title, window.location.pathname);
 
       if (userData?.role === 'admin') {
