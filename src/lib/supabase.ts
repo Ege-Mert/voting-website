@@ -9,6 +9,7 @@ export const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
   auth: {
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true // This is crucial for OAuth callbacks!
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   }
 });

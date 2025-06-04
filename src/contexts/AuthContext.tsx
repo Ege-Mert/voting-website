@@ -36,10 +36,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               id: authUser.id,
               email: authUser.email!,
               name: authUser.user_metadata?.name || authUser.user_metadata?.full_name || 'User',
-              avatar_url: authUser.user_metadata?.avatar_url || authUser.user_metadata?.picture,
-              role: 'user' as const,
-              created_at: new Date().toISOString(),
-              updated_at: new Date().toISOString()
+              role: 'voter' as const, // Default role for new users
+              created_at: new Date().toISOString()
             };
 
             const { data: createdUser, error: createError } = await supabase
@@ -90,8 +88,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session);
-        
         if (event === 'SIGNED_IN' && session) {
           try {
             const userData = await fetchUserData(session.user.id);
@@ -124,7 +120,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          },
+          redirectTo: `${window.location.origin}/login`
         }
       });
       
@@ -132,7 +132,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         throw error;
       }
 
-      if (data.url) {
+      // Only redirect if we have a URL
+      if (data?.url) {
         window.location.href = data.url;
       }
     } catch (err: any) {
