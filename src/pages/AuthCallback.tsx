@@ -32,6 +32,9 @@ const AuthCallback = () => {
             .eq('id', session.user.id)
             .single();
 
+          // Clean up URL parameters
+          window.history.replaceState({}, document.title, window.location.pathname);
+
           // Redirect based on role
           if (userData?.role === 'admin') {
             navigate('/admin');
