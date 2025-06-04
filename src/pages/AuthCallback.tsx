@@ -10,7 +10,15 @@ const AuthCallback = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data: { session }, error } = await supabase.auth.getSession();
+        // Get the code from the URL
+        const code = new URLSearchParams(window.location.search).get('code');
+        
+        if (!code) {
+          throw new Error('No code provided in callback URL');
+        }
+
+        // Exchange the code for a session
+        const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
         
         if (error) {
           throw error;
