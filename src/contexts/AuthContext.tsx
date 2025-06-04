@@ -67,7 +67,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       
       const { data: { session } } = await supabase.auth.getSession();
-      console.log('Current session:', session); // Debug log
+      console.log('Current session:', session);
       
       if (session) {
         const userData = await fetchUserData(session.user.id);
@@ -87,11 +87,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   useEffect(() => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       async (event, session) => {
-        console.log('Auth state changed:', event, session); // Debug log
+        console.log('Auth state changed:', event, session);
+        
         if (event === 'SIGNED_IN' && session) {
           try {
             const userData = await fetchUserData(session.user.id);
             setUser(userData as User);
+            
+            // Clean up URL parameters after successful auth
+            if (window.location.search || window.location.hash) {
+              window.history.replaceState({}, document.title, window.location.pathname);
+            }
           } catch (err) {
             console.error('Error handling sign in:', err);
             setError('Failed to load user data');
@@ -117,26 +123,28 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsLoading(true);
       setError(null);
       
+      console.log('Starting Google OAuth...');
+      
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/auth/callback`,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
-          }
         }
       });
       
       if (error) {
+        console.error('OAuth error:', error);
         throw error;
       }
 
-      console.log('Sign in response:', data); // Debug log
+      console.log('OAuth redirect URL:', data?.url);
+      
+      if (data?.url) {
+        window.location.href = data.url;
+      }
     } catch (err: any) {
       console.error('Error signing in with Google:', err);
       setError(err.message || 'Failed to sign in with Google');
-    } finally {
       setIsLoading(false);
     }
   };
