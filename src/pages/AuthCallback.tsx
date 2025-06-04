@@ -8,50 +8,60 @@ const AuthCallback = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    const handleAuthCallback = async () => {
+    let subscription: ReturnType<typeof supabase.auth.onAuthStateChange>['data']['subscription'] | undefined;
+
+    const handleSession = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']) => {
+      if (!session) {
+        navigate('/login');
+        return;
+      }
+
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('role')
+        .eq('id', session.user.id)
+        .single();
+
+      if (userError) {
+        console.error('Error fetching user data:', userError);
+        navigate('/');
+        return;
+      }
+
+      window.history.replaceState({}, document.title, window.location.pathname);
+
+      if (userData?.role === 'admin') {
+        navigate('/admin');
+      } else {
+        navigate('/');
+      }
+    };
+
+    const init = async () => {
       try {
-        // Supabase automatically exchanges the code from the URL when
-        // `detectSessionInUrl` is enabled. Retrieve the current session.
-        const {
-          data: { session },
-          error
-        } = await supabase.auth.getSession();
-
-        if (error || !session) {
-          console.error('No active session:', error);
-          navigate('/login');
-          return;
-        }
-
-        // Get user data to determine role
-        const { data: userData, error: userError } = await supabase
-          .from('users')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-
-        if (userError) {
-          console.error('Error fetching user data:', userError);
-          navigate('/');
-          return;
-        }
-
-        // Clean up URL parameters
-        window.history.replaceState({}, document.title, window.location.pathname);
-
-        // Redirect based on role
-        if (userData?.role === 'admin') {
-          navigate('/admin');
+        const { data, error } = await supabase.auth.getSession();
+        if (!error && data.session) {
+          await handleSession(data.session);
         } else {
-          navigate('/');
+          subscription = supabase.auth.onAuthStateChange(async (event, session) => {
+            if (event === 'SIGNED_IN') {
+              await handleSession(session);
+            } else if (event === 'SIGNED_OUT') {
+              navigate('/login');
+            }
+          }).data.subscription;
         }
-      } catch (error) {
-        console.error('Error in auth callback:', error);
+      } catch (err) {
+        console.error('Error in auth callback:', err);
         navigate('/login');
       }
     };
 
-    handleAuthCallback();
+    init();
+
+    return () => {
+      subscription?.unsubscribe();
+    };
   }, [supabase, navigate]);
 
   return <LoadingScreen />;
