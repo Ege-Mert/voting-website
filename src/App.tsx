@@ -14,6 +14,7 @@ import EventViewPage from './pages/events/EventViewPage';
 import VotingPage from './pages/events/VotingPage';
 import ResultsPage from './pages/events/ResultsPage';
 import NotFoundPage from './pages/NotFoundPage';
+import AuthCallback from './pages/AuthCallback';
 
 // Components
 import ProtectedRoute from './components/auth/ProtectedRoute';
@@ -32,6 +33,7 @@ function App() {
 
   return (
     <Routes>
+      <Route path="/auth/callback" element={<AuthCallback />} />
       <Route path="/" element={<MainLayout />}>
         {/* Public routes */}
         <Route index element={<HomePage />} />
