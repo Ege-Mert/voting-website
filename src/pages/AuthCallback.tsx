@@ -14,41 +14,47 @@ const AuthCallback = () => {
         const code = new URLSearchParams(window.location.search).get('code');
         
         if (!code) {
-          throw new Error('No code provided in callback URL');
+          console.error('No code provided in callback URL');
+          navigate('/login');
+          return;
         }
 
         // Exchange the code for a session
-        const { data: { session }, error } = await supabase.auth.exchangeCodeForSession(code);
+        const { data, error } = await supabase.auth.exchangeCodeForSession(code);
         
         if (error) {
-          throw error;
+          console.error('Error exchanging code for session:', error);
+          navigate('/login');
+          return;
         }
 
-        if (session) {
-          // Get user data to determine role
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
-
-          if (userError) {
-            console.error('Error fetching user data:', userError);
-            navigate('/');
-            return;
-          }
-
-          // Clean up URL parameters
-          window.history.replaceState({}, document.title, window.location.pathname);
-
-          // Redirect based on role
-          if (userData?.role === 'admin') {
-            navigate('/admin');
-          } else {
-            navigate('/');
-          }
-        } else {
+        if (!data.session) {
+          console.error('No session returned from exchange');
           navigate('/login');
+          return;
+        }
+
+        // Get user data to determine role
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('role')
+          .eq('id', data.session.user.id)
+          .single();
+
+        if (userError) {
+          console.error('Error fetching user data:', userError);
+          navigate('/');
+          return;
+        }
+
+        // Clean up URL parameters
+        window.history.replaceState({}, document.title, window.location.pathname);
+
+        // Redirect based on role
+        if (userData?.role === 'admin') {
+          navigate('/admin');
+        } else {
+          navigate('/');
         }
       } catch (error) {
         console.error('Error in auth callback:', error);
