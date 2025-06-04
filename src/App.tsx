@@ -8,6 +8,7 @@ import MainLayout from './components/layout/MainLayout';
 // Pages
 import HomePage from './pages/HomePage';
 import LoginPage from './pages/LoginPage';
+import AuthCallback from './pages/AuthCallback';
 import AdminDashboard from './pages/admin/AdminDashboard';
 import EventEditor from './pages/admin/EventEditor';
 import EventViewPage from './pages/events/EventViewPage';
@@ -36,6 +37,7 @@ function App() {
         {/* Public routes */}
         <Route index element={<HomePage />} />
         <Route path="login" element={<LoginPage />} />
+        <Route path="auth/callback" element={<AuthCallback />} />
         
         {/* Admin routes */}
         <Route 

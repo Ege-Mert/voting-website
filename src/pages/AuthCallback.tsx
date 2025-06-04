@@ -8,13 +8,38 @@ const AuthCallback = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      if (session) {
-        navigate('/');
-      } else {
+    const handleAuthCallback = async () => {
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+        
+        if (error) {
+          throw error;
+        }
+
+        if (session) {
+          // Get user data to determine role
+          const { data: userData } = await supabase
+            .from('users')
+            .select('role')
+            .eq('id', session.user.id)
+            .single();
+
+          // Redirect based on role
+          if (userData?.role === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/');
+          }
+        } else {
+          navigate('/login');
+        }
+      } catch (error) {
+        console.error('Error in auth callback:', error);
         navigate('/login');
       }
-    });
+    };
+
+    handleAuthCallback();
   }, [supabase, navigate]);
 
   return <LoadingScreen />;
