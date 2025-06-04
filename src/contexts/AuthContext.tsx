@@ -146,9 +146,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (data?.url) {
         window.location.href = data.url;
       }
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error signing in with Google:', err);
-      setError(err.message || 'Failed to sign in with Google');
+      setError(err instanceof Error ? err.message : 'Failed to sign in with Google');
       setIsLoading(false);
     }
   };
@@ -165,9 +165,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
       
       setUser(null);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error signing out:', err);
-      setError(err.message || 'Failed to sign out');
+      setError(err instanceof Error ? err.message : 'Failed to sign out');
     } finally {
       setIsLoading(false);
     }

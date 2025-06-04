@@ -1,18 +1,15 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { 
-  ArrowLeft, Save, AlertTriangle, CheckCircle, Clock, Star as StarIcon
-} from 'lucide-react';
+import { ArrowLeft, Save, AlertTriangle, CheckCircle, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../../hooks/useAuth';
 import { 
-  getEventWithCategories, 
-  getUserVotes 
+  getUserVotes
 } from '../../services/eventService';
 import { submitMultipleVotes } from '../../services/voteService';
 import StarRating from '../../components/common/StarRating';
 import { Event, Category, Item } from '../../types';
-import { format, isPast, formatDistanceToNow } from 'date-fns';
+import { isPast, formatDistanceToNow } from 'date-fns';
 
 interface CategoryWithUserVotes extends Category {
   items: (Item & { user_vote?: number })[];
@@ -62,9 +59,9 @@ const VotingPage = () => {
         });
         
         setVotes(initialVotes);
-      } catch (err: any) {
+      } catch (err) {
         console.error('Error fetching event:', err);
-        setError(err.message || 'Failed to load event');
+        setError(err instanceof Error ? err.message : 'Failed to load event');
       } finally {
         setIsLoading(false);
       }
@@ -102,9 +99,9 @@ const VotingPage = () => {
       setTimeout(() => {
         setSuccessMessage(null);
       }, 3000);
-    } catch (err: any) {
+    } catch (err) {
       console.error('Error saving votes:', err);
-      setError(err.message || 'Failed to save votes');
+      setError(err instanceof Error ? err.message : 'Failed to save votes');
     } finally {
       setIsSaving(false);
     }

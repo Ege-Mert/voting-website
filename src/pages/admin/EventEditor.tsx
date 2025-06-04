@@ -10,7 +10,7 @@ import {
   createEvent, 
   updateEvent 
 } from '../../services/eventService';
-import { Event, Category, Item } from '../../types';
+import { Category, Item } from '../../types';
 
 interface CategoryInput {
   id?: string;
@@ -64,10 +64,10 @@ const EventEditor = () => {
         }));
         
         setCategories(categoriesInput);
-      } catch (err: any) {
-        console.error('Error fetching event:', err);
-        setError(err.message || 'Failed to load event');
-      } finally {
+        } catch (err) {
+          console.error('Error fetching event:', err);
+          setError(err instanceof Error ? err.message : 'Failed to load event');
+        } finally {
         setIsLoading(false);
       }
     };
@@ -253,10 +253,10 @@ const EventEditor = () => {
       
       // Redirect to admin dashboard
       navigate('/admin');
-    } catch (err: any) {
-      console.error('Error saving event:', err);
-      setError(err.message || 'Failed to save event');
-    } finally {
+      } catch (err) {
+        console.error('Error saving event:', err);
+        setError(err instanceof Error ? err.message : 'Failed to save event');
+      } finally {
       setIsSaving(false);
     }
   };
