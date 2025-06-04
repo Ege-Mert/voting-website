@@ -8,25 +8,6 @@ const AuthCallback = () => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let subscription: ReturnType<typeof supabase.auth.onAuthStateChange>['data']['subscription'] | undefined;
-
-    const handleSession = async (session: Awaited<ReturnType<typeof supabase.auth.getSession>>['data']['session']) => {
-      if (!session) {
-        navigate('/login');
-        return;
-      }
-
-      const { data: userData, error: userError } = await supabase
-        .from('users')
-        .select('role')
-        .eq('id', session.user.id)
-        .single();
-
-      if (userError) {
-        console.error('Error fetching user data:', userError);
-        navigate('/');
-        return;
-      }
 
       window.history.replaceState({}, document.title, window.location.pathname);
 
